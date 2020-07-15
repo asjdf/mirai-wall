@@ -23,6 +23,7 @@ import jieba.analyse
 import logging
 from wordcloud import WordCloud
 from dotenv import load_dotenv
+import base64
 
 
 def catch_exception(origin_func):
@@ -339,7 +340,6 @@ class QzoneSpider(object):
         return h & 0x7fffffff
 
     def __test(self):
-        # syn_tweet_verson=1&paramstr=1&pic_template=&richtype=&richval=&special_url=&subrichtype=&who=1&con=%E6%B5%8B%E8%AF%95&feedversion=1&ver=1&ugc_right=64&to_sign=0&hostuin=243852814&code_version=1&format=fs&qzreferrer=https%3A%2F%2Fuser.qzone.qq.com%2F243852814
         params = {
             'syn_tweet_verson': '1',
             'paramstr': '1',
@@ -368,55 +368,82 @@ class QzoneSpider(object):
             'Sec-Fetch-Dest': 'empty',
         }
         pUrl = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?&g_tk=' + str(self._g_tk)
+        print(requests.post(pUrl, data=params, headers=headers, cookies=self.cookies))
+
+
+    def __test_pic(self):
+        with open("B:\\Users\\At\\Desktop\\_DSC0240.jpg","rb") as f:
+            # b64encode是编码，b64decode是解码
+            base64_data = base64.b64encode(f.read())
+        params = {
+            'filename': 'filename',
+            'uin': self.username,
+            'skey': self.cookies['skey'],
+            'zzpaneluin': self.cookies['ptui_loginuin'],
+            'zzpanelkey': '',
+            'p_uin': self.cookies['ptui_loginuin'],
+            'p_skey': self.cookies['p_skey'],
+            'qzonetoken': '',
+            'uploadtype': '1',
+            'albumtype': '7',
+            'exttype': '0',
+            'refer': 'shuoshuo',
+            'output_type': 'jsonhtml',
+            'charset': 'utf-8',
+            'output_charset': 'utf-8',
+            'upload_hd': '1',
+            'hd_width': '2048',
+            'hd_height': '10000',
+            'hd_quality': '96',
+            'url': 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) ,
+            'base64': '1',
+            'jsonhtml_callback': 'callback',
+            'picfile': base64_data
+        }
+        headers = {
+            'user-agent': QzoneSpider.user_agent,
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,ja;q=0.8,en;q=0.7,und;q=0.6',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+        }
+        pUrl = 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) + '&&g_tk='+ str(self._g_tk)
         print(params)
         print(pUrl)
-        # postData = "qzreferrer=http%3A%2F%2Fuser.qzone.qq.com%2F" + self.username + "&syn_tweet_verson=1&paramstr=1&pic_template=&richtype=&richval=&special_url=&subrichtype=&con=test&feedversion=1&ver=1&ugc_right=1&to_tweet=0&to_sign=0&hostuin=" + self.username + "&code_version=1&format=fs"
-        # print(postData)
-        # pCookies=self.cookies
-        # pCookies['pgv_pvid'] = pCookies['pgv_pvi']
-        # pCookies['pgv_info'] = pCookies['pgv_si']
-        # pCookies['cpu_performance_v8'] = '3'
-        # r = requests.Session().post(pUrl,headers=headers,data=postData)
-        # print(r)
-        # print(r.text)
-        print(requests.post(pUrl, data=params, headers=headers, cookies=self.cookies))
-        print(requests.post(pUrl, data=params, headers=headers, cookies=self.cookies).text)
-        print(self.cookies)
-
-        # content = input("请输入说说内容：")
-        # qq = input("请输入你的QQ：")
-        # res = requests.get(url=f'https://user.qzone.qq.com/{self.username}/infocenter', headers=headers,
-        #                 cookies=cookie).text  # 获取qzonetoken的页面源码
-        # qzonetoken = re.findall('\{ try\{return "(.*?)";}', res)[0]  # 解析出qzonetoken
-        # g_tk = hash33(cooksdict['skey'], 5381)  # 从Cookie中获取g_tk
-        # url = f'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?qzonetoken={qzonetoken}&g_tk={g_tk}'
-        # data = {
-        #     'syn_tweet_verson': '1',
-        #     'paramstr': '1',
-        #     'pic_template': '',
-        #     'richtype': '',
-        #     'richval': '',
-        #     'special_url': '',
-        #     'subrichtype': '',
-        #     'who': '1',
-        #     'con': content,
-        #     'feedversion': '1',
-        #     'ver': '1',
-        #     'ugc_right': '1',
-        #     'to_sign': '0',
-        #     'hostuin': qq,
-        #     'code_version': '1',
-        #     'format': 'fs',
-        #     'qzreferrer': 'https://user.qzone.qq.com/' + qq,
-        # }
-        # response = requests.post(url=url, headers=headers, data=data, cookies=cookie)
-        # print(response.status_code)
+        response = requests.post(pUrl, data=params, headers=headers, cookies=self.cookies)
+        print(response)
+        print(response.text)
+        data = json.loads(re.findall(r"frameElement.callback\((.+?)\);</script></body>", response.text)[0])
+        bo = re.findall(r"bo=(.+?)$", data['data']['url'])[0]
+        params2 = {
+            'syn_tweet_verson': '1',
+            'paramstr': '1',
+            'pic_template': '',
+            'richtype': '1',
+            'richval': ','+data['data']['albumid']+','+data['data']['lloc']+','+data['data']['sloc']+','+str(data['data']['type'])+','+str(data['data']['height'])+','+str(data['data']['width'])+',,'+str(data['data']['height'])+','+str(data['data']['width']),
+            'pic_bo': bo + '    ' + bo,
+            'special_url': '',
+            'subrichtype': '1',
+            'who': '1',
+            'con': '测试(qq好友可见',
+            'feedversion': '1',
+            'ver': '1',
+            'ugc_right': '64',
+            'to_sign': '0',
+            'hostuin': self.username,
+            'code_version': '1',
+            'format': 'fs',
+            'qzreferrer': 'https://user.qzone.qq.com/' + self.username
+        }
+        pUrl2 = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?&g_tk=' + str(self._g_tk)
+        print(requests.post(pUrl2, data=params2, headers=headers, cookies=self.cookies))
 
 
     @catch_exception
     def run(self):
         self.__login()
-        self.__test()
+        self.__test_pic()
 
 
 if __name__ == '__main__':
