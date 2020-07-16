@@ -21,7 +21,7 @@ anonymous = {}
 @app.receiver("FriendMessage")
 async def event_gm(app: Mirai, friend: Friend, message: MessageChain):
     # 记录留言
-    if message.toString() == "/end" and recordingList[str(friend.id)] == 0:
+    if message.toString() == "end" and recordingList[str(friend.id)] == 0:
         recordingList[str(friend.id)] = 1
         note[str(friend.id)] = note[str(friend.id)].rstrip()
         await app.sendFriendMessage(friend, [
@@ -30,12 +30,16 @@ async def event_gm(app: Mirai, friend: Friend, message: MessageChain):
     if str(friend.id) in recordingList and recordingList[str(friend.id)] == 0:
         note[str(friend.id)] = note[str(friend.id)] + message.toString() + '\n'
         print(note)
-    if message.toString() == "/start" and str(friend.id) not in recordingList:
+    if message.toString() == "发帖" and str(friend.id) not in recordingList:
         await app.sendFriendMessage(friend, [
             Plain(text="开始记录")
         ])
         note[str(friend.id)] = ''
         recordingList[str(friend.id)] = 0
+    if str(friend.id) not in recordingList:
+        await app.sendFriendMessage(friend, [
+            Plain(text='hi!需要给墙留言请发送:"发帖",结束留言请发送:"end",请按提示进行操作.')
+        ])
     # 记录是否匿名
     if str(friend.id) in recordingList and recordingList[str(friend.id)] == 1:
         if message.toString() == "是":

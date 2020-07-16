@@ -84,7 +84,7 @@ class QzoneSpider(object):
         self.options.add_argument('--start-maximized')
         # self.options.add_argument('--window-size=1366,768')
 
-        # self.options.add_argument('--headless')
+        self.options.add_argument('--headless')
         self.options.add_argument('--disable-gpu')  # 谷歌官方文档说加上此参数可减少 bug，仅适用于 Windows 系统
 
         # 解决 unknown error: DevToolsActivePort file doesn't exist
