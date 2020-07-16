@@ -56,7 +56,10 @@ async def event_gm(app: Mirai, friend: Friend, message: MessageChain):
             ])
     if str(friend.id) in recordingList and recordingList[str(friend.id)] == 2:
         if message.toString() == "发送":
-            img=t2i.text2piiic2(friend.id, note[str(friend.id)],20,qName = friend.nickname)#图片生成
+            if anonymous[str(friend.id)] == 0:
+                img=t2i.text2piiic2(friend.id, note[str(friend.id)],20,qName = friend.nickname)#图片生成
+            if anonymous[str(friend.id)] == 1:
+                img=t2i.text2piiic2('', note[str(friend.id)],20)#图片生成
             # 清除缓存
             del anonymous[str(friend.id)]
             del recordingList[str(friend.id)]
