@@ -82,7 +82,7 @@ class QzoneSpider(object):
         self.options.add_argument('--incognito')  # 隐身模式
         self.options.add_argument('--disable-plugins-discovery')
         self.options.add_argument('--start-maximized')
-        # self.options.add_argument('--window-size=1366,768')
+        self.options.add_argument('--window-size=1366,768')
 
         self.options.add_argument('--headless')
         self.options.add_argument('--disable-gpu')  # 谷歌官方文档说加上此参数可减少 bug，仅适用于 Windows 系统
@@ -386,35 +386,7 @@ class QzoneSpider(object):
         pUrl = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?&g_tk=' + str(self._g_tk)
         print(requests.post(pUrl, data=params, headers=headers, cookies=self.cookies))
 
-    def __post_pic(self,msg,pic):
-        # with open(pic,"rb") as f:
-        #     # b64encode是编码，b64decode是解码
-        #     base64_data = base64.b64encode(f.read())
-        params = {
-            'filename': 'filename',
-            'uin': self.username,
-            'skey': self.cookies['skey'],
-            'zzpaneluin': self.cookies['ptui_loginuin'],
-            'zzpanelkey': '',
-            'p_uin': self.cookies['ptui_loginuin'],
-            'p_skey': self.cookies['p_skey'],
-            'qzonetoken': '',
-            'uploadtype': '1',
-            'albumtype': '7',
-            'exttype': '0',
-            'refer': 'shuoshuo',
-            'output_type': 'jsonhtml',
-            'charset': 'utf-8',
-            'output_charset': 'utf-8',
-            'upload_hd': '1',
-            'hd_width': '2048',
-            'hd_height': '10000',
-            'hd_quality': '96',
-            'url': 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) ,
-            'base64': '1',
-            'jsonhtml_callback': 'callback',
-            'picfile': pic
-        }
+    def __post_pic(self,msg,pics = []):
         headers = {
             'user-agent': QzoneSpider.user_agent,
             'Accept': '*/*',
@@ -423,21 +395,70 @@ class QzoneSpider(object):
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Dest': 'empty',
         }
-        pUrl = 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) + '&&g_tk='+ str(self._g_tk)
-        print(params)
-        print(pUrl)
-        response = requests.post(pUrl, data=params, headers=headers, cookies=self.cookies)
-        print(response)
-        print(response.text)
-        data = json.loads(re.findall(r"frameElement.callback\((.+?)\);</script></body>", response.text)[0])
-        bo = re.findall(r"bo=(.+?)$", data['data']['url'])[0]
+        print(pics)
+        imgUploadRe = []# 记录图片上传的应答
+        for pic in pics:
+            print(pic)
+            params = {
+                'filename': 'filename',
+                'uin': self.username,
+                'skey': self.cookies['skey'],
+                'zzpaneluin': self.cookies['ptui_loginuin'],
+                'zzpanelkey': '',
+                'p_uin': self.cookies['ptui_loginuin'],
+                'p_skey': self.cookies['p_skey'],
+                'qzonetoken': '',
+                'uploadtype': '1',
+                'albumtype': '7',
+                'exttype': '0',
+                'refer': 'shuoshuo',
+                'output_type': 'jsonhtml',
+                'charset': 'utf-8',
+                'output_charset': 'utf-8',
+                'upload_hd': '1',
+                'hd_width': '2048',
+                'hd_height': '10000',
+                'hd_quality': '96',
+                'url': 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) ,
+                'base64': '1',
+                'jsonhtml_callback': 'callback',
+                'picfile': pic
+            }
+            pUrl = 'https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?g_tk=' + str(self._g_tk) + '&&g_tk='+ str(self._g_tk)
+            print(params)
+            print(pUrl)
+            response = requests.post(pUrl, data=params, headers=headers, cookies=self.cookies)
+            print(response)
+            print(response.text)
+            data = json.loads(re.findall(r"frameElement.callback\((.+?)\);</script></body>", response.text)[0])
+            print(data)
+            imgUploadRe.append(data)
+            # imgUploadRe = 
+            # bos.append(re.findall(r"bo=(.+?)$", data['data']['url'])[0])
+        richval = ''
+        bos = ''
+        picNum = 0
+        # 图片上传的richval和bos处理
+        for data in imgUploadRe:
+            picNum = picNum + 1
+            richval = richval + ','+data['data']['albumid']+','+data['data']['lloc']+','+data['data']['sloc']+','+str(data['data']['type'])+','+str(data['data']['height'])+','+str(data['data']['width'])+',,'+str(data['data']['height'])+','+str(data['data']['width']) + '	'
+            bos = bos +  re.findall(r"bo=(.+?)$", data['data']['url'])[0] + ','
+        richval = richval.rstrip()
+        bos = bos.rstrip(',')
+        print(richval)
+        print(bos)
+        # picTemplate处理
+        if picNum == 1:
+            pic_template = ''
+        else:
+            pic_template = 'tpl-' + str(picNum) + '-1'
         params2 = {
             'syn_tweet_verson': '1',
             'paramstr': '1',
-            'pic_template': '',
+            'pic_template': pic_template,
             'richtype': '1',
-            'richval': ','+data['data']['albumid']+','+data['data']['lloc']+','+data['data']['sloc']+','+str(data['data']['type'])+','+str(data['data']['height'])+','+str(data['data']['width'])+',,'+str(data['data']['height'])+','+str(data['data']['width']),
-            'pic_bo': bo + '    ' + bo,
+            'richval': richval,
+            'pic_bo': bos + '	' + bos,
             'special_url': '',
             'subrichtype': '1',
             'who': '1',
@@ -451,8 +472,11 @@ class QzoneSpider(object):
             'format': 'fs',
             'qzreferrer': 'https://user.qzone.qq.com/' + self.username
         }
+        print(params2)
         pUrl2 = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?&g_tk=' + str(self._g_tk)
-        print(requests.post(pUrl2, data=params2, headers=headers, cookies=self.cookies))
+        r = requests.post(pUrl2, data=params2, headers=headers, cookies=self.cookies)
+        print(r)
+        print(r.content)
         return 1
 
     @catch_exception
@@ -466,7 +490,7 @@ class QzoneSpider(object):
         return 1
 
     @catch_exception
-    def pImg(self, msg = 'none message',pic = ''):
+    def pImg(self, msg = 'none message',pic = []):
         self.__login()
         self.__post_pic(msg,pic)
         return 1
@@ -474,7 +498,18 @@ class QzoneSpider(object):
 
 if __name__ == '__main__':
     spider = QzoneSpider()
-    spider.pMsg(msg = 'test3')
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(spider.pMsg(msg = 'test3'))
+    picCache = []
+    img = Image.open('./headPic.jpg')
+    output_buffer = BytesIO()
+    img.save(output_buffer, format='JPEG')
+    byte_data = output_buffer.getvalue()
+    base64_str = base64.b64encode(byte_data)
+    picCache.append(base64_str)
+    img = Image.open('B:/Users/At/Desktop/_DSC1311.jpg')
+    output_buffer = BytesIO()
+    img.save(output_buffer, format='JPEG')
+    byte_data = output_buffer.getvalue()
+    base64_str = base64.b64encode(byte_data)
+    picCache.append(base64_str)
+    spider.pImg(msg = '',pic = picCache)
     
