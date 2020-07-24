@@ -7,7 +7,7 @@ from io import BytesIO
 import requests
 from PIL import Image as PIL_img
 import io
-
+from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv(verbose=True, override=True, encoding='utf-8')
 qq = os.getenv('YOUR_QQ') # 字段 qq 的值

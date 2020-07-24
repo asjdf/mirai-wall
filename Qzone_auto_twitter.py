@@ -112,7 +112,6 @@ class QzoneSpider(object):
         self.cookies_file = 'cookies_jar'
         self.username = os.getenv('YOUR_QQ')
         self.password = os.getenv('PASSWORD')
-        self.friend_qq = os.getenv('FRIEND_QQ')
 
         # QQ空间令牌
         self._g_tk = None
@@ -126,7 +125,6 @@ class QzoneSpider(object):
         :param force: 是否强制登录，强制登录将忽略已存在的 cookies 文件，走完整登录逻辑
         :return:
         """
-        force = True #强制重新登录
         if not force and os.path.exists(self.cookies_file):
             print('发现已存在 cookies 文件，免登录')
             with open(self.cookies_file, 'rb') as f:
@@ -384,7 +382,18 @@ class QzoneSpider(object):
             'Sec-Fetch-Dest': 'empty',
         }
         pUrl = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?&g_tk=' + str(self._g_tk)
-        print(requests.post(pUrl, data=params, headers=headers, cookies=self.cookies))
+        response = requests.post(pUrl, data=params, headers=headers, cookies=self.cookies)
+        print('1')
+        # print(re.findall(r"frameElement.callback\((.+?)\); </script></body>", response.text)[0])
+        msg_data = json.loads(re.findall(r"frameElement.callback\((.+?)\); </script></body>", response.text)[0])
+        code = msg_data['code']
+        print(code)
+        if code == -3000:
+            print('由于之前缓存的 cookies 文件已失效，将尝试自动重新登录...')
+            self.__login(force=True)
+            return self.__post(msg)
+        elif code != 0:
+            raise Exception(msg_data['message'])
 
     def __post_pic(self,msg,pics = []):
         headers = {
@@ -395,7 +404,6 @@ class QzoneSpider(object):
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Dest': 'empty',
         }
-        print(pics)
         imgUploadRe = []# 记录图片上传的应答
         for pic in pics:
             print(pic)
@@ -428,13 +436,22 @@ class QzoneSpider(object):
             print(params)
             print(pUrl)
             response = requests.post(pUrl, data=params, headers=headers, cookies=self.cookies)
-            print(response)
+            print(response.text)
+            msg_data = json.loads(re.findall(r"frameElement.callback\((.+?)\);</script></body></html>", response.text)[0])
+            print(msg_data)
+            code = msg_data['ret']
+            print(code)
+            if code == -100:
+                print('由于之前缓存的 cookies 文件已失效，将尝试自动重新登录...')
+                self.__login(force=True)
+                return self.__post(msg)
+            elif code != 0:
+                raise Exception(msg_data['data']['msg'])
+
             print(response.text)
             data = json.loads(re.findall(r"frameElement.callback\((.+?)\);</script></body>", response.text)[0])
-            print(data)
             imgUploadRe.append(data)
-            # imgUploadRe = 
-            # bos.append(re.findall(r"bo=(.+?)$", data['data']['url'])[0])
+        
         richval = ''
         bos = ''
         picNum = 0
@@ -498,6 +515,7 @@ class QzoneSpider(object):
 
 if __name__ == '__main__':
     spider = QzoneSpider()
+    # spider.pMsg(msg = 'test')
     picCache = []
     img = Image.open('./headPic.jpg')
     output_buffer = BytesIO()
