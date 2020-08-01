@@ -1,7 +1,7 @@
 from mirai import Mirai, Plain, MessageChain, Friend, FriendMessage, Image
 import asyncio
 import TextToImage as t2i
-from Qzone_auto_twitter import QzoneSpider as autoTwitter
+from Qzone_auto_twitterV2 import QzoneSpider as autoTwitter
 import base64
 from io import BytesIO
 import requests
