@@ -21,6 +21,3 @@ https://github.com/luolongfei/qzone-spider
 https://www.cnblogs.com/deeround/p/4386693.html
 
 https://blog.csdn.net/weixin_30726161/article/details/99961847
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fasjdf%2Fmirai-wall.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fasjdf%2Fmirai-wall?ref=badge_large)
